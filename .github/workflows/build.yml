@@ -1,0 +1,91 @@
+# This is the name of your "compiler" workflow
+name: Build and Package Installers
+
+# This tells GitHub when to run the "compiler"
+# Here, it runs every time you push code to the 'main' branch
+on:
+  push:
+    branches: [ main ]
+
+# These are the jobs the "compiler" will perform
+jobs:
+  # Job 1: Build for Windows
+  build-windows:
+    runs-on: windows-latest # Uses a Windows virtual machine
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build JAR file
+        # This assumes you're using a Gradle build system.
+        # Change to 'mvn package' if you use Maven.
+        run: ./gradlew build
+
+      - name: Create Windows EXE Installer
+        run: jpackage --type exe --input build/libs --name BlockCraft-3D --main-jar BlockCraft-3D.jar --main-class com.yourcompany.MainClass --win-menu --win-shortcut
+
+      - name: Upload Windows EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-Installer
+          path: ./*.exe
+
+  # Job 2: Build for macOS
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build JAR file
+        run: ./gradlew build
+
+      - name: Create macOS DMG Installer
+        run: jpackage --type dmg --input build/libs --name BlockCraft-3D --main-jar BlockCraft-3D.jar --main-class com.yourcompany.MainClass
+
+      - name: Upload macOS DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-Installer
+          path: ./*.dmg
+
+  # Job 3: Build for Linux
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      # On Linux, you need to install the 'fakeroot' tool for jpackage
+      - name: Install fakeroot
+        run: sudo apt-get update && sudo apt-get install -y fakeroot
+
+      - name: Build JAR file
+        run: ./gradlew build
+
+      - name: Create Linux AppImage
+        run: jpackage --type app-image --input build/libs --name BlockCraft-3D --main-jar BlockCraft-3D.jar --main-class com.yourcompany.MainClass
+
+      - name: Upload Linux AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux-AppImage
+          path: ./*.AppImage
